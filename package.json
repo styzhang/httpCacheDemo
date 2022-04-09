@@ -1,0 +1,21 @@
+{
+  "name": "http-cache-demo",
+  "version": "1.0.0",
+  "description": "a http cache demo implement is based on Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "node index.js"
+  },
+  "keywords": [
+    "nodejs",
+    "HTTP Cache",
+    "http-cache-demo"
+  ],
+  "author": "styzhang",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "mime": "^3.0.0"
+  }
+}

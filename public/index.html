@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HTTP Cache Demo</title>
+  <link rel="icon" href="favicon.png">
+  <link rel="stylesheet" href="css/index.css" prefetch>
+</head>
+<body>
+  <h1>Hello World</h1>
+  <h2>This is http cache demo page</h2>
+  <div id="timer"></div>
+  <div>
+    <button id="img-btn">获取图片</button>
+    <button onclick="document.querySelector('img').src = ''">重置图片</button>
+  </div>
+  <div class="img-wrapper">
+    <img src="" style="width: 400px"/>
+    <p id="img-err" style="color: firebrick;display: none">获取图片失败</p>
+  </div>
+  <script type="text/javascript" src="js/date-timer.js"></script>
+  <script type="text/javascript">
+    function getBlobToBase64 (blob) {
+      return new Promise(function (resolve, reject) {
+        const reader  = new FileReader();
+        reader.onload = function (e) {
+          resolve(e.target.result);
+        };
+        reader.onerror = function (e) {
+          reject(e);
+        };
+        reader.readAsDataURL(blob);
+      });
+    }
+    let lastModified, etag;
+    document.querySelector('#img-btn').onclick = function getImg () {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", 'images/guilin.jpg', true);
+      xhr.responseType = 'blob';
+      /*
+      * 当前主流浏览器都不支持request no-store,设置no-store时无效果
+      * */
+      // xhr.setRequestHeader('Cache-Control', 'no-store');
+      /*
+      * TODO
+      * */
+      xhr.setRequestHeader('Cache-Control', 'no-cache');
+      // xhr.setRequestHeader('Cache-Control', 'max-age=0');
+      lastModified && xhr.setRequestHeader('If-Modified-Since', lastModified);
+      etag && xhr.setRequestHeader('If-None-Match', etag);
+      xhr.onload = function () {
+        lastModified = xhr.getResponseHeader('Last-Modified');
+        etag = xhr.getResponseHeader('ETag');
+        getBlobToBase64(xhr.response)
+          .then(function (url) {
+            document.querySelector('img').src = url;
+          })
+          .catch(function () {
+            document.querySelector("#img-err").style.display = 'block';
+          });
+      };
+      xhr.onerror = function () {
+        document.querySelector("#img-err").style.display = 'block';
+      };
+      xhr.send();
+    }
+  </script>
+</body>
+</html>

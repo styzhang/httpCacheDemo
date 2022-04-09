@@ -1,0 +1,42 @@
+*, *::after, *::before {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+}
+h1, h2 {
+    margin: 0;
+    padding: 10px 20px;
+}
+button {
+    cursor: pointer;
+}
+#img-btn {
+    margin: 10px 20px;
+}
+#timer {
+    display: inline-block;
+    animation: move 12s linear infinite;
+    padding: 10px 20px;
+    white-space: nowrap;
+}
+.img-wrapper {
+    padding: 10px 20px;
+}
+@keyframes move {
+    0% {
+        transform: translate(0);
+    }
+    25% {
+        transform: translate(calc(100vw - 100%), 0);
+    }
+    50% {
+        transform: translate(calc(100vw - 100%), calc(70vh - 100%));
+    }
+    75% {
+        transform: translate(0, calc(70vh - 100%));
+    }
+    100% {
+        transform: translate(0);
+    }
+}
