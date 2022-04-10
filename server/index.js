@@ -28,19 +28,30 @@ function sendRespFile (req, resp, filePath) {
     const sizeHexStr = size.toString(16);
     const mtimeHexStr = mtime.getTime().toString(16);
     const etag = `${sizeHexStr}-${mtimeHexStr}`;
+    if (headers[NONE_MATCH] === etag) {
+      resp.statusCode = 304;
+      resp.end();
+      return;
+    }
+    if (headers[MODIFIED_SINCE] === mtimeStr) {
+      resp.statusCode = 304;
+      resp.end();
+      return;
+    }
     resp.setHeader('Content-Type', mimeType);
     if (mimeType.endsWith('html')) {
+      resp.setHeader('ETag', etag);
       resp.setHeader('Content-Length', size);
       fs.createReadStream(filePath).pipe(resp);
       return;
     }
     /*
-    * HTTP1.0 -- Expires
+    * HTTP1.0 -- Expires：缓存过期时间
     * 缺点：
     * 该过期时间是以客户端时间为准的（通常是PC），如果客户端与资源所在的服务端(origin server)的时间不同步，缓存过期时间则会有误差
     * 缓存过期后，不管资源有无变化，客户端会再次向服务器发起该资源的请求
     * */
-    resp.setHeader('Expires', new Date(Date.now() + 2 * 60 * 1000).toUTCString());
+    // resp.setHeader('Expires', new Date(Date.now() + 2 * 60 * 1000).toUTCString());
     /*
     * HTTP1.0 -- Pragma: 用来向后兼容只支持 HTTP/1.0 协议的缓存服务器，那时候 HTTP/1.1 协议中的 Cache-Control 还没有出来
     * 效果同Cache-Control
@@ -50,13 +61,15 @@ function sendRespFile (req, resp, filePath) {
     * HTTP1.1开始支持Cache-Control、Last-Modified/if-modified-since与ETag/if-none-match
     * Cache-Control优先级大于Expires（如果设置了no-cache/no-store/max-age等Expires会被忽略）
     * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+    * public: 客户端或代理服务器均可以缓存，一般应用于代理服务器做共享缓存（如CDN）
+    * private: 客户端缓存（本地缓存或者浏览器缓存）。面向单用户，不能被代理服务器缓存（比如CDN）
     * */
     // resp.setHeader('Cache-Control', 'public');
     // resp.setHeader('Cache-Control', 'public, max-age=60');
     // resp.setHeader('Cache-Control', 'private');
     // resp.setHeader('Cache-Control', 'private, max-age=60');
     /*
-    * response max-age:
+    * response max-age: 缓存存储的最大周期（以请求时间为基准），超过这个时间缓存被认为过期(单位秒)
     * request max-age:
     * */
     // resp.setHeader('Cache-Control', 'max-age=60');
@@ -75,17 +88,7 @@ function sendRespFile (req, resp, filePath) {
     * */
     // resp.setHeader('Cache-Control', 'no-store');
     // resp.setHeader('ETag', etag);
-    resp.setHeader('Last-Modified', mtimeStr);
-    if (headers[NONE_MATCH] === etag) {
-      resp.statusCode = 304;
-      resp.end();
-      return;
-    }
-    if (headers[MODIFIED_SINCE] === mtimeStr) {
-      resp.statusCode = 304;
-      resp.end();
-      return;
-    }
+    // resp.setHeader('Last-Modified', mtimeStr);
     resp.setHeader('Content-Length', size);
     fs.createReadStream(filePath).pipe(resp);
   });

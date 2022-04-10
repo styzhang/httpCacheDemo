@@ -46,8 +46,8 @@
       * */
       xhr.setRequestHeader('Cache-Control', 'no-cache');
       // xhr.setRequestHeader('Cache-Control', 'max-age=0');
-      lastModified && xhr.setRequestHeader('If-Modified-Since', lastModified);
-      etag && xhr.setRequestHeader('If-None-Match', etag);
+      // lastModified && xhr.setRequestHeader('If-Modified-Since', lastModified);
+      // etag && xhr.setRequestHeader('If-None-Match', etag);
       xhr.onload = function () {
         lastModified = xhr.getResponseHeader('Last-Modified');
         etag = xhr.getResponseHeader('ETag');
