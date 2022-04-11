@@ -13,35 +13,37 @@ function send404 (resp) {
 }
 
 function sendRespFile (req, resp, filePath) {
-  console.log("file path: %s", filePath);
   fs.stat(filePath, function (err, stats) {
     if (err) {
+      console.log("file path: %s", filePath);
       console.log(err);
       return send404(resp);
     }
     if (stats.isDirectory()) return send404();
     const mimeType = mime.getType(path.basename(filePath));
     const { headers } = req;
-    console.log("headers: %s", JSON.stringify(headers));
+    // console.log("headers: %s", JSON.stringify(headers));
     const { size, mtime } =  stats;
     const mtimeStr = mtime.toUTCString();
     const sizeHexStr = size.toString(16);
     const mtimeHexStr = mtime.getTime().toString(16);
     const etag = `${sizeHexStr}-${mtimeHexStr}`;
+    resp.setHeader('Content-Length', size);
     if (headers[NONE_MATCH] === etag) {
       resp.statusCode = 304;
+      resp.setHeader('ETag', etag);
       resp.end();
       return;
     }
     if (headers[MODIFIED_SINCE] === mtimeStr) {
       resp.statusCode = 304;
+      resp.setHeader('Last-Modified', mtimeStr);
       resp.end();
       return;
     }
     resp.setHeader('Content-Type', mimeType);
     if (mimeType.endsWith('html')) {
       resp.setHeader('ETag', etag);
-      resp.setHeader('Content-Length', size);
       fs.createReadStream(filePath).pipe(resp);
       return;
     }
@@ -61,7 +63,7 @@ function sendRespFile (req, resp, filePath) {
     * HTTP1.1开始支持Cache-Control、Last-Modified/if-modified-since与ETag/if-none-match
     * Cache-Control优先级大于Expires（如果设置了no-cache/no-store/max-age等Expires会被忽略）
     * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
-    * public: 客户端或代理服务器均可以缓存，一般应用于代理服务器做共享缓存（如CDN）
+    * public: 客户端或代理服务器均可以缓存，一般应用于代理服务器做共享缓存（如CDN），面向多用户
     * private: 客户端缓存（本地缓存或者浏览器缓存）。面向单用户，不能被代理服务器缓存（比如CDN）
     * */
     // resp.setHeader('Cache-Control', 'public');
@@ -89,7 +91,6 @@ function sendRespFile (req, resp, filePath) {
     // resp.setHeader('Cache-Control', 'no-store');
     // resp.setHeader('ETag', etag);
     // resp.setHeader('Last-Modified', mtimeStr);
-    resp.setHeader('Content-Length', size);
     fs.createReadStream(filePath).pipe(resp);
   });
 }
