@@ -13,9 +13,9 @@ function send404 (resp) {
 }
 
 function sendRespFile (req, resp, filePath) {
+  console.log("file path: %s", filePath);
   fs.stat(filePath, function (err, stats) {
     if (err) {
-      console.log("file path: %s", filePath);
       console.log(err);
       return send404(resp);
     }
@@ -29,15 +29,11 @@ function sendRespFile (req, resp, filePath) {
     const mtimeHexStr = mtime.getTime().toString(16);
     const etag = `${sizeHexStr}-${mtimeHexStr}`;
     resp.setHeader('Content-Length', size);
-    if (headers[NONE_MATCH] === etag) {
+    if (headers[MODIFIED_SINCE]) resp.setHeader('Last-Modified', mtimeStr);
+    if (headers[NONE_MATCH]) resp.setHeader('ETag', etag);
+    if (headers[NONE_MATCH] === etag ||
+      (!headers[NONE_MATCH] && headers[MODIFIED_SINCE] === mtimeStr)) {
       resp.statusCode = 304;
-      resp.setHeader('ETag', etag);
-      resp.end();
-      return;
-    }
-    if (headers[MODIFIED_SINCE] === mtimeStr) {
-      resp.statusCode = 304;
-      resp.setHeader('Last-Modified', mtimeStr);
       resp.end();
       return;
     }
@@ -90,6 +86,11 @@ function sendRespFile (req, resp, filePath) {
     * */
     // resp.setHeader('Cache-Control', 'no-store');
     // resp.setHeader('ETag', etag);
+    /*
+    * 如果仅设置Last-Modified，未设置Cache-Control或Expires，会触发heuristic_freshness_checking
+    * https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#heuristic_freshness_checking
+    * */
+    // resp.setHeader('Cache-Control', 'max-age=0');
     // resp.setHeader('Last-Modified', mtimeStr);
     fs.createReadStream(filePath).pipe(resp);
   });
