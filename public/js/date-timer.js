@@ -4,7 +4,7 @@ const date = new Date();
 
 function loopTime () {
   const year = date.getFullYear();
-  const month = date.getMonth();
+  const month = date.getMonth() + 1;
   const day = date.getDate();
   let hour = date.getHours();
   hour = hour < 10 ? '0' + hour : hour;
